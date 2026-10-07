@@ -7,7 +7,7 @@
 
 **Split bills, track who owes who, and settle up across currencies, even when everyone is in a different place.**
 
-### [Live demo: splittrip-vibhu.web.app](https://splittrip-vibhu.web.app)
+### [Live demo: splittrip-in.web.app](https://splittrip-in.web.app)
 Tap **Try as guest**, then **Load a sample trip** to see every feature with ready-made data.
 
 <p align="center"><img src="docs/demo.gif" alt="SplitTrip demo" width="280" /></p>
@@ -25,7 +25,8 @@ SplitTrip is a Progressive Web App that implements the PBL paper *"Development o
 | **Smart settle-up** | The fewest payments that clear everyone's balance, plus "mark as paid". |
 | **Insights** | Spend by category, who paid vs who consumed, daily spend, biggest expense, foreign spending. |
 | **Real-time sync** | Everyone in a group sees changes instantly (Firestore live listeners). Invite people with a link. |
-| **Razorpay (test mode)** | Real checkout flow for settling up, with no real money moved. |
+| **UPI settle-up** | Pay with a `upi://pay` deep link (Google Pay, PhonePe, Paytm, BHIM) or scan a generated QR code. Each member can save a UPI ID. |
+| **Razorpay (test mode)** | Optional checkout flow for settling up, with no real money moved. |
 | **Edit anything** | Edit or delete expenses; the saved exchange rate is preserved. |
 | **Works offline-ish** | Installable PWA with a service worker; offline demo mode with local data when no backend is configured. |
 
@@ -43,7 +44,7 @@ SplitTrip is a Progressive Web App that implements the PBL paper *"Development o
 
 - **Frontend:** React 19, TypeScript (strict), Vite, React Router
 - **Backend (serverless):** Firebase Authentication (Google and anonymous), Cloud Firestore, Firebase Hosting
-- **Payments:** Razorpay Checkout (test mode)
+- **Payments:** UPI deep links and QR codes (`qrcode`), optional Razorpay Checkout (test mode)
 - **Data APIs:** Frankfurter (historical FX rates), OpenStreetMap Nominatim (place names)
 - **Quality:** Vitest unit tests, GitHub Actions CI, Firestore security rules
 - **PWA:** vite-plugin-pwa (manifest and service worker)
@@ -81,7 +82,7 @@ npm test         # unit tests for the split / balance / settle / loan / insights
 3. Deploy:
    ```bash
    npx firebase login
-   npx firebase use <your-project-id>
+   npx firebase use <your-project-id>   # then set your own site ids in firebase.json
    npm run deploy      # builds, then publishes hosting and the Firestore rules
    ```
 
@@ -97,9 +98,9 @@ firestore.rules members-only access; append-only payments
 
 ## Limitations and roadmap
 
-- Razorpay runs in **test mode** only. A production integration needs server-created orders and signature verification.
+- UPI payments happen in the user's own UPI app, so SplitTrip cannot verify them; the payer confirms with "I've paid". Razorpay runs in **test mode** only and would need server-created orders and signature verification in production.
 - Reminders are in-app, WhatsApp links and browser notifications while the app is open. Background push (FCM plus a scheduled function) is planned.
-- Planned: receipt scanning, UPI deep links, offline-first writes, end-to-end tests, optimal settle-up for small groups.
+- Planned: receipt scanning, offline-first writes, end-to-end tests, optimal settle-up for small groups.
 
 ## License
 
