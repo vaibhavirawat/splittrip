@@ -47,6 +47,7 @@ export interface Store {
   joinGroup(user: User, gid: string, claimMemberId?: string): Promise<void>
   addMember(gid: string, name: string): Promise<void>
   addExpense(gid: string, e: NewExpense): Promise<void>
+  updateExpense(gid: string, e: Expense): Promise<void>
   deleteExpense(gid: string, id: string): Promise<void>
   addPayment(gid: string, p: NewPayment): Promise<void>
   createSample(user: User): Promise<string>

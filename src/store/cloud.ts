@@ -95,6 +95,9 @@ export const cloudStore: Store = {
   addExpense: async (gid, e) => {
     await addDoc(collection(D(), 'groups', gid, 'expenses'), clean({ ...e, createdAt: Date.now() }))
   },
+  updateExpense: async (gid, e) => {
+    await setDoc(doc(D(), 'groups', gid, 'expenses', e.id), clean(e))
+  },
   deleteExpense: async (gid, id) => {
     await deleteDoc(doc(D(), 'groups', gid, 'expenses', id))
   },

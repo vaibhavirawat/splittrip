@@ -98,6 +98,10 @@ export const localStore: Store = {
     ;(db.expenses[gid] ??= []).unshift({ ...e, id: rid(), createdAt: Date.now() })
     save()
   },
+  updateExpense: async (gid, e) => {
+    db.expenses[gid] = (db.expenses[gid] ?? []).map((x) => (x.id === e.id ? e : x))
+    save()
+  },
   deleteExpense: async (gid, id) => {
     db.expenses[gid] = (db.expenses[gid] ?? []).filter((x) => x.id !== id)
     save()

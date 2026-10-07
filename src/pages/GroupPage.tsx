@@ -8,7 +8,7 @@ import { confetti } from '../lib/confetti'
 import { emojiFor } from '../lib/emoji'
 import { notifyOverdue, whatsappLink } from '../lib/notify'
 import { payWithRazorpay, razorpayEnabled } from '../lib/razorpay'
-import { balances, formatMoney, loans, settle, sharesInBase, toBase, type Loan, type Transfer } from '../lib/split'
+import { balances, formatMoney, type Expense, loans, settle, sharesInBase, toBase, type Loan, type Transfer } from '../lib/split'
 import { store, type GroupData } from '../store'
 
 type Tab = 'expenses' | 'balances' | 'loans' | 'members'
@@ -20,6 +20,7 @@ export default function GroupPage() {
   const [data, setData] = useState<GroupData | null | undefined>(undefined)
   const [tab, setTab] = useState<Tab>('expenses')
   const [adding, setAdding] = useState(false)
+  const [editing, setEditing] = useState<Expense | null>(null)
   const [msg, setMsg] = useState('')
 
   useEffect(() => store.watchGroup(gid!, setData), [gid])
@@ -109,7 +110,10 @@ export default function GroupPage() {
               {foreign && <div className="mute">≈ {money(toBase(e.amount, e.rate))} at {e.rate} {cur}/{e.currency}</div>}
               <div className="row">
                 <span className="mute">{meId && e.split[meId] !== undefined ? `Your share ${money(mine)}` : 'You are not part of this'}</span>
-                <button className="link" onClick={() => confirm('Delete this expense?') && store.deleteExpense(group.id, e.id)}>Delete</button>
+                <span>
+                  <button className="link" onClick={() => setEditing(e)}>Edit</button>
+                  <button className="link" onClick={() => confirm('Delete this expense?') && store.deleteExpense(group.id, e.id)}>Delete</button>
+                </span>
               </div>
             </div>
           )
@@ -177,6 +181,11 @@ export default function GroupPage() {
       </>}
 
       {tab === 'expenses' && <button className="primary fab" onClick={() => setAdding(true)}>+ Add expense</button>}
+      {editing && <ExpenseForm key={editing.id} group={group} meId={meId ?? ''} initial={editing}
+        onSave={(x) => {
+          const { location: _l, dueDate: _d, ...rest } = editing // so a cleared optional field is really removed
+          return store.updateExpense(group.id, { ...rest, ...x })
+        }} onClose={() => setEditing(null)} />}
       {adding && <ExpenseForm group={group} meId={meId ?? ''} onSave={(e) => store.addExpense(group.id, e)} onClose={() => setAdding(false)} />}
     </div>
   )

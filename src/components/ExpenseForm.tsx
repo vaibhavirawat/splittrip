@@ -1,39 +1,52 @@
-import { useEffect, useMemo, useState } from 'react'
-import { allocate, formatMoney, parseMoney, toBase, type SplitType } from '../lib/split'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { allocate, formatMoney, parseMoney, toBase, type Expense, type SplitType } from '../lib/split'
 import { CURRENCIES, detectPlace, fetchRate } from '../lib/rates'
 import type { Group, NewExpense } from '../store'
 
 interface Props {
   group: Group
   meId: string
+  initial?: Expense // set when editing
   onSave: (e: NewExpense) => Promise<void>
   onClose: () => void
 }
 
-export default function ExpenseForm({ group, meId, onSave, onClose }: Props) {
+export default function ExpenseForm({ group, meId, initial, onSave, onClose }: Props) {
   const ids = Object.keys(group.members)
   const now = new Date()
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  const [description, setDescription] = useState('')
-  const [amountStr, setAmountStr] = useState('')
-  const [currency, setCurrency] = useState(group.baseCurrency)
-  const [rateStr, setRateStr] = useState('1')
+  const minor = (n: number) => (n / 100).toFixed(2)
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [amountStr, setAmountStr] = useState(initial ? minor(initial.amount) : '')
+  const [currency, setCurrency] = useState(initial?.currency ?? group.baseCurrency)
+  const [rateStr, setRateStr] = useState(String(initial?.rate ?? 1))
   const [rateNote, setRateNote] = useState('')
-  const [date, setDate] = useState(today)
-  const [paidBy, setPaidBy] = useState(ids.includes(meId) ? meId : ids[0])
-  const [location, setLocation] = useState('')
-  const [dueDate, setDueDate] = useState('')
-  const [splitType, setSplitType] = useState<SplitType>('equal')
-  const [included, setIncluded] = useState<Record<string, boolean>>(Object.fromEntries(ids.map((i) => [i, true])))
-  const [weights, setWeights] = useState<Record<string, string>>({})
+  const [date, setDate] = useState(initial?.date ?? today)
+  const [paidBy, setPaidBy] = useState(initial?.paidBy ?? (ids.includes(meId) ? meId : ids[0]))
+  const [location, setLocation] = useState(initial?.location ?? '')
+  const [dueDate, setDueDate] = useState(initial?.dueDate ?? '')
+  const [splitType, setSplitType] = useState<SplitType>(initial?.splitType ?? 'equal')
+  const [included, setIncluded] = useState<Record<string, boolean>>(
+    Object.fromEntries(ids.map((i) => [i, initial ? i in initial.split : true])),
+  )
+  const [weights, setWeights] = useState<Record<string, string>>(
+    initial && initial.splitType !== 'equal'
+      ? Object.fromEntries(Object.entries(initial.split).map(([k, v]) => [k, initial.splitType === 'exact' ? minor(v) : String(v)]))
+      : {},
+  )
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
 
   const amount = parseMoney(amountStr)
   const rate = parseFloat(rateStr) || 0
 
+  // When editing, keep the saved rate until the currency or date actually changes.
+  const saved = useRef(initial ? `${initial.currency}|${initial.date}` : null)
+
   // Auto-fetch the FX rate for the chosen currency and date; the user can still override it.
   useEffect(() => {
+    if (saved.current === `${currency}|${date}`) { setRateNote('Saved rate'); return }
+    saved.current = null
     if (currency === group.baseCurrency) { setRateStr('1'); setRateNote(''); return }
     let live = true
     setRateNote('Fetching rate…')
@@ -82,7 +95,7 @@ export default function ExpenseForm({ group, meId, onSave, onClose }: Props) {
   return (
     <div className="modal" onClick={onClose}>
       <div className="sheet stack" onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ margin: 0 }}>Add expense 💸</h2>
+        <h2 style={{ margin: 0 }}>{initial ? 'Edit expense ✏️' : 'Add expense 💸'}</h2>
         <label>What was it for?<input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner at the beach shack" autoFocus /></label>
         <div className="grid2">
           <label>Amount<input inputMode="decimal" value={amountStr} onChange={(e) => setAmountStr(e.target.value)} placeholder="0.00" /></label>
@@ -132,7 +145,7 @@ export default function ExpenseForm({ group, meId, onSave, onClose }: Props) {
         </div>
         <label>Remind about this by (optional)<input type="date" value={dueDate} min={date} onChange={(e) => setDueDate(e.target.value)} /></label>
         {err && <p className="err">{err}</p>}
-        <button className="primary" disabled={busy} onClick={submit}>Save expense</button>
+        <button className="primary" disabled={busy} onClick={submit}>{initial ? 'Save changes' : 'Save expense'}</button>
       </div>
     </div>
   )
