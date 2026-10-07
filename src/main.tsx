@@ -15,6 +15,12 @@ function Gate({ children }: { children: ReactElement }) {
   return children
 }
 
+// A new deploy installs a new service worker; reload once when it takes over so users never keep seeing the old version.
+if ('serviceWorker' in navigator) {
+  const hadController = !!navigator.serviceWorker.controller
+  navigator.serviceWorker.addEventListener('controllerchange', () => hadController && location.reload())
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>

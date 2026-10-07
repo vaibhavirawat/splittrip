@@ -54,7 +54,12 @@ export default function Groups() {
           </div>
         </Link>
       ))}
-      {groups && groups.length > 0 && <button className="link" disabled={busy} onClick={sample}>✨ Add a sample trip</button>}
+      {groups && groups.length > 0 && !groups.some((g) => g.name.includes('(sample)')) && (
+        <button className="sample-cta" disabled={busy} onClick={sample}>
+          <span className="emo">✨</span>
+          <span><b>Load a sample trip</b><span className="mute" style={{ display: 'block' }}>See every feature with ready-made data</span></span>
+        </button>
+      )}
       <button className="primary fab" onClick={() => setOpen(true)}>+ New group ✨</button>
       {open && (
         <div className="modal" onClick={() => setOpen(false)}>

@@ -104,3 +104,5 @@ label{display:grid;gap:5px;font-size:.85rem;font-weight:700;color:var(--mute)}
 @media(max-width:420px){.donut-wrap{grid-template-columns:1fr;justify-items:center}.legend{width:100%}}
 @media(max-width:480px){.tabs button:not(.on) .lbl{display:none}.tabs button.on{flex:2}}
 .wrap{overflow-x:hidden}
+.sample-cta{width:100%;justify-content:flex-start;text-align:left;gap:12px;padding:12px 14px;background:var(--teal-soft);margin-top:4px;animation:rise .5s .15s both}
+.sample-cta .emo{background:var(--card)}
