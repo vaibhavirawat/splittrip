@@ -49,10 +49,12 @@ export default function ExpenseForm({ group, meId, initial, onSave, onClose }: P
     saved.current = null
     if (currency === group.baseCurrency) { setRateStr('1'); setRateNote(''); return }
     let live = true
+    setRateStr('') // never keep a stale rate while looking up a new one
     setRateNote('Fetching rate…')
     fetchRate(currency, group.baseCurrency, date).then((r) => {
       if (!live) return
-      if (r) { setRateStr(String(r)); setRateNote(`Rate on ${date}`) } else setRateNote('Offline: enter the rate manually')
+      if (r) { setRateStr(String(r.rate)); setRateNote(`Rate on ${date} · ${r.source}`) }
+      else setRateNote("Couldn't fetch a rate. Enter it by hand.")
     })
     return () => { live = false }
   }, [currency, date, group.baseCurrency])
@@ -106,7 +108,7 @@ export default function ExpenseForm({ group, meId, initial, onSave, onClose }: P
           </label>
         </div>
         {currency !== group.baseCurrency && (
-          <label>1 {currency} = ? {group.baseCurrency} <span>{rateNote}</span>
+          <label>1 {currency} = ? {group.baseCurrency} <span>{rateNote}{rate > 0 && rate < 1 ? ` · 1 ${group.baseCurrency} = ${(1 / rate).toFixed(2)} ${currency}` : ''}</span>
             <input inputMode="decimal" value={rateStr} onChange={(e) => setRateStr(e.target.value)} />
           </label>
         )}
@@ -122,7 +124,7 @@ export default function ExpenseForm({ group, meId, initial, onSave, onClose }: P
         </label>
 
         <div>
-          <div className="mute" style={{ marginBottom: 6 }}>Split</div>
+          <div className="mute" style={{ marginBottom: 6 }}>Split{` (shown in ${group.baseCurrency}, this group's settle currency)`}</div>
           <div className="chips">
             {([['equal', 'Equally (Dutch)'], ['ratio', 'By ratio'], ['exact', 'Exact amounts']] as const).map(([t, l]) => (
               <button key={t} type="button" className={'chip' + (splitType === t ? ' on' : '')} onClick={() => setSplitType(t)}>{l}</button>
