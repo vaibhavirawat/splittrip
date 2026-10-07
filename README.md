@@ -1,5 +1,7 @@
 # SplitTrip
 
+**Live demo: https://splittrip-vibhu.web.app** (tap *Try as guest*)
+
 Group expense manager built from the PBL paper: equal/ratio/exact bill splitting (Dutch treat), automatic loan tracking with overdue reminders, multi-currency and multi-location expenses with historical FX, minimum-payment settle-up, and Razorpay test-mode payments. Installable PWA with live sync through Firebase.
 
 **Stack:** React + TypeScript + Vite · Firebase Auth + Firestore (real-time) · Razorpay Checkout (test mode) · Vitest
