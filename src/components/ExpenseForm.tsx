@@ -12,7 +12,8 @@ interface Props {
 
 export default function ExpenseForm({ group, meId, onSave, onClose }: Props) {
   const ids = Object.keys(group.members)
-  const today = new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const [description, setDescription] = useState('')
   const [amountStr, setAmountStr] = useState('')
   const [currency, setCurrency] = useState(group.baseCurrency)

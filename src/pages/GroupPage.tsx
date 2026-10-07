@@ -46,7 +46,7 @@ export default function GroupPage() {
 
   async function markPaid(t: Transfer, method: 'manual' | 'razorpay' = 'manual', ref?: string) {
     await store.addPayment(group.id, {
-      from: t.from, to: t.to, amount: t.amount, date: new Date().toISOString().slice(0, 10), method, ...(ref && { ref }),
+      from: t.from, to: t.to, amount: t.amount, date: new Date().toLocaleDateString('en-CA'), method, ...(ref && { ref }),
     })
   }
 
