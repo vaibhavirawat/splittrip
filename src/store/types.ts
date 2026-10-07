@@ -1,0 +1,53 @@
+import type { Expense, Payment } from '../lib/split'
+
+export interface User {
+  uid: string
+  name: string
+  email?: string
+  isGuest: boolean
+}
+
+export interface Member {
+  name: string
+  uid?: string // set once a real account has claimed this member
+}
+
+export interface Group {
+  id: string
+  name: string
+  baseCurrency: string
+  graceDays: number // days before an unpaid share is flagged overdue
+  members: Record<string, Member>
+  memberUids: string[]
+  createdBy: string
+  createdAt: number
+}
+
+export interface GroupData {
+  group: Group
+  expenses: Expense[]
+  payments: Payment[]
+}
+
+export type NewExpense = Omit<Expense, 'id' | 'createdAt'>
+export type NewPayment = Omit<Payment, 'id' | 'createdAt'>
+export type Unsub = () => void
+
+export interface Store {
+  mode: 'cloud' | 'local'
+  onAuth(cb: (u: User | null) => void): Unsub
+  signInGoogle(): Promise<void>
+  signInGuest(): Promise<void>
+  signOut(): Promise<void>
+  watchGroups(uid: string, cb: (g: Group[]) => void): Unsub
+  watchGroup(gid: string, cb: (d: GroupData | null) => void): Unsub
+  previewGroup(gid: string): Promise<Group | null>
+  createGroup(user: User, name: string, baseCurrency: string, others: string[]): Promise<string>
+  joinGroup(user: User, gid: string, claimMemberId?: string): Promise<void>
+  addMember(gid: string, name: string): Promise<void>
+  addExpense(gid: string, e: NewExpense): Promise<void>
+  deleteExpense(gid: string, id: string): Promise<void>
+  addPayment(gid: string, p: NewPayment): Promise<void>
+}
+
+export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
