@@ -1,4 +1,5 @@
 import type { Expense, Payment } from '../lib/split'
+import { sampleTrip } from '../lib/sample'
 
 export interface User {
   uid: string
@@ -48,6 +49,15 @@ export interface Store {
   addExpense(gid: string, e: NewExpense): Promise<void>
   deleteExpense(gid: string, id: string): Promise<void>
   addPayment(gid: string, p: NewPayment): Promise<void>
+  createSample(user: User): Promise<string>
 }
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
+
+/** Shared by both stores: turn the sample trip into a group plus its records. */
+export function buildSample(user: User) {
+  const s = sampleTrip(user.uid)
+  const members: Group['members'] = { [user.uid]: { name: user.name, uid: user.uid } }
+  for (const [id, name] of Object.entries(s.others)) members[id] = { name }
+  return { sample: s, members }
+}

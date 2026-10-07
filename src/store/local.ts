@@ -1,5 +1,5 @@
 import type { Expense, Payment } from '../lib/split'
-import { uid as rid, type Group, type GroupData, type Store, type Unsub, type User } from './types'
+import { buildSample, uid as rid, type Group, type GroupData, type Store, type Unsub, type User } from './types'
 
 // Offline demo store: one user, data persisted in localStorage. Used when Firebase env vars are absent.
 const KEY = 'splittrip-local-v1'
@@ -80,6 +80,15 @@ export const localStore: Store = {
     return id
   },
   joinGroup: async () => { throw new Error('Joining groups needs the cloud version') },
+  createSample: async (user) => {
+    const { sample, members } = buildSample(user)
+    const id = rid()
+    db.groups = [{ id, name: sample.name, baseCurrency: sample.baseCurrency, graceDays: 7, members, memberUids: [user.uid], createdBy: user.uid, createdAt: Date.now() }, ...db.groups]
+    db.expenses[id] = sample.expenses.map((e) => ({ ...e, id: rid(), createdAt: Date.now() })).reverse()
+    db.payments[id] = sample.payments.map((p) => ({ ...p, id: rid(), createdAt: Date.now() }))
+    save()
+    return id
+  },
   addMember: async (gid, name) => {
     const g = find(gid)
     if (g) g.members['g_' + rid()] = { name }

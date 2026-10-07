@@ -6,7 +6,7 @@ import {
 } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import type { Expense, Payment } from '../lib/split'
-import { uid as rid, type Group, type GroupData, type Store, type User } from './types'
+import { buildSample, uid as rid, type Group, type GroupData, type Store, type User } from './types'
 
 const A = () => auth!
 const D = () => db!
@@ -77,6 +77,18 @@ export const cloudStore: Store = {
     await updateDoc(ref, { memberUids: arrayUnion(user.uid), ...joined })
   },
 
+  createSample: async (user) => {
+    const { sample, members } = buildSample(user)
+    const ref = await addDoc(collection(D(), 'groups'), {
+      name: sample.name, baseCurrency: sample.baseCurrency, graceDays: 7, members, memberUids: [user.uid], createdBy: user.uid, createdAt: Date.now(),
+    })
+    const now = Date.now()
+    await Promise.all([
+      ...sample.expenses.map((e, i) => addDoc(collection(ref, 'expenses'), clean({ ...e, createdAt: now + i }))),
+      ...sample.payments.map((p) => addDoc(collection(ref, 'payments'), clean({ ...p, createdAt: now }))),
+    ])
+    return ref.id
+  },
   addMember: async (gid, name) => {
     await updateDoc(doc(D(), 'groups', gid), { [`members.g_${rid()}`]: { name } })
   },

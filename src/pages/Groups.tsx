@@ -17,6 +17,11 @@ export default function Groups() {
 
   useEffect(() => store.watchGroups(user!.uid, setGroups), [user])
 
+  async function sample() {
+    setBusy(true)
+    nav(`/g/${await store.createSample(user!)}`)
+  }
+
   async function create() {
     if (!name.trim()) return
     setBusy(true)
@@ -34,7 +39,9 @@ export default function Groups() {
         </div>
       </header>
       {groups === null && <p className="mute">Loading…</p>}
-      {groups?.length === 0 && <div className="empty"><big>🧳</big>No groups yet.<br />Make one for your next trip or dinner.</div>}
+      {groups?.length === 0 && <div className="empty"><big>🧳</big>No groups yet.<br />Make one for your next trip or dinner.
+        <div style={{ marginTop: 16 }}><button className="primary" disabled={busy} onClick={sample}>✨ Load a sample trip</button>
+          <div className="mute" style={{ marginTop: 8 }}>See every feature with ready-made data</div></div></div>}
       {groups?.map((g, i) => (
         <Link key={g.id} to={`/g/${g.id}`} className="card row item" style={{ color: 'inherit', ['--i' as string]: i }}>
           <div className="who">
@@ -47,6 +54,7 @@ export default function Groups() {
           </div>
         </Link>
       ))}
+      {groups && groups.length > 0 && <button className="link" disabled={busy} onClick={sample}>✨ Add a sample trip</button>}
       <button className="primary fab" onClick={() => setOpen(true)}>+ New group ✨</button>
       {open && (
         <div className="modal" onClick={() => setOpen(false)}>
