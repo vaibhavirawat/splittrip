@@ -82,7 +82,7 @@ export default function ExpenseForm({ group, meId, onSave, onClose }: Props) {
   return (
     <div className="modal" onClick={onClose}>
       <div className="sheet stack" onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ margin: 0 }}>Add expense</h2>
+        <h2 style={{ margin: 0 }}>Add expense 💸</h2>
         <label>What was it for?<input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Dinner at the beach shack" autoFocus /></label>
         <div className="grid2">
           <label>Amount<input inputMode="decimal" value={amountStr} onChange={(e) => setAmountStr(e.target.value)} placeholder="0.00" /></label>

@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth'
+import Avatar from '../components/Avatar'
+import CountUp from '../components/CountUp'
 import ExpenseForm from '../components/ExpenseForm'
+import { confetti } from '../lib/confetti'
+import { emojiFor } from '../lib/emoji'
 import { notifyOverdue, whatsappLink } from '../lib/notify'
 import { payWithRazorpay, razorpayEnabled } from '../lib/razorpay'
 import { balances, formatMoney, loans, settle, sharesInBase, toBase, type Loan, type Transfer } from '../lib/split'
 import { store, type GroupData } from '../store'
 
 type Tab = 'expenses' | 'balances' | 'loans' | 'members'
+const TAB_EMOJI: Record<Tab, string> = { expenses: '🧾', balances: '⚖️', loans: '⏰', members: '👯' }
 
 export default function GroupPage() {
   const { gid } = useParams()
@@ -48,6 +53,7 @@ export default function GroupPage() {
     await store.addPayment(group.id, {
       from: t.from, to: t.to, amount: t.amount, date: new Date().toLocaleDateString('en-CA'), method, ...(ref && { ref }),
     })
+    confetti()
   }
 
   async function razorpay(t: Transfer) {
@@ -71,31 +77,31 @@ export default function GroupPage() {
     <div className="wrap">
       <header className="top">
         <div><Link to="/">‹ Groups</Link><h1>{group.name}</h1></div>
-        {meId && <div style={{ textAlign: 'right' }}>
-          <div className="mute">Your balance</div>
-          <div className={calc.bal[meId] >= 0 ? 'pos' : 'neg'}>{calc.bal[meId] >= 0 ? 'you are owed ' : 'you owe '}{money(Math.abs(calc.bal[meId]))}</div>
+        {meId && <div className="bal-card">
+          <span className="mute">{calc.bal[meId] >= 0 ? 'You are owed' : 'You owe'}</span>
+          <b><CountUp value={Math.abs(calc.bal[meId])} currency={cur} /></b>
         </div>}
       </header>
 
       <div className="tabs">
         {(['expenses', 'balances', 'loans', 'members'] as Tab[]).map((t) => (
           <button key={t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>
-            {t[0].toUpperCase() + t.slice(1)}{t === 'loans' && overdueMine > 0 ? ` (${overdueMine}!)` : ''}
+            {TAB_EMOJI[t]} {t[0].toUpperCase() + t.slice(1)}{t === 'loans' && overdueMine > 0 ? ` (${overdueMine}!)` : ''}
           </button>
         ))}
       </div>
       {msg && <p className="mute" role="status">{msg}</p>}
 
       {tab === 'expenses' && <>
-        {expenses.length === 0 && <p className="mute">No expenses yet. Tap “Add expense”.</p>}
-        {expenses.map((e) => {
+        {expenses.length === 0 && <div className="empty"><big>🧾</big>Nothing here yet.<br />Tap “Add expense” to log the first one.</div>}
+        {expenses.map((e, i) => {
           const foreign = e.currency !== cur
           const mine = meId ? sharesInBase(e)[meId] ?? 0 : 0
           return (
-            <div key={e.id} className="card">
+            <div key={e.id} className="card item" style={{ ['--i' as string]: i }}>
               <div className="row">
-                <b>{e.description}</b>
-                <b>{formatMoney(e.amount, e.currency)}</b>
+                <span className="who"><span className="emo">{emojiFor(e.description)}</span><b>{e.description}</b></span>
+                <b style={{ fontFamily: 'var(--display)', fontSize: '1.1rem' }}>{formatMoney(e.amount, e.currency)}</b>
               </div>
               <div className="mute">
                 {gname(e.paidBy)} paid · {e.date}{e.location ? ` · 📍 ${e.location}` : ''} · {e.splitType === 'equal' ? 'split equally' : e.splitType === 'ratio' ? 'split by ratio' : 'exact amounts'} ({Object.keys(e.split).length})
@@ -112,22 +118,22 @@ export default function GroupPage() {
 
       {tab === 'balances' && <>
         <h2>Net balances</h2>
-        {Object.keys(group.members).map((id) => (
-          <div key={id} className="card row">
-            <span>{gname(id)}{id === meId && ' (you)'}</span>
+        {Object.keys(group.members).map((id, i) => (
+          <div key={id} className="card row item" style={{ ['--i' as string]: i }}>
+            <span className="who"><Avatar name={gname(id)} />{gname(id)}{id === meId && ' (you)'}</span>
             <span className={calc.bal[id] > 0 ? 'pos' : calc.bal[id] < 0 ? 'neg' : 'mute'}>
               {calc.bal[id] === 0 ? 'settled' : `${calc.bal[id] > 0 ? 'is owed ' : 'owes '}${money(Math.abs(calc.bal[id]))}`}
             </span>
           </div>
         ))}
         <h2>Settle up (fewest payments)</h2>
-        {calc.transfers.length === 0 && <p className="mute">Everyone is settled. 🎉</p>}
+        {calc.transfers.length === 0 && <div className="empty"><big>🎉</big>Everyone is settled. Clean slate!</div>}
         {calc.transfers.map((t, i) => (
-          <div key={i} className="card stack">
-            <div className="row"><span>{gname(t.from)} → {gname(t.to)}</span><b>{money(t.amount)}</b></div>
+          <div key={i} className="card stack item" style={{ ['--i' as string]: i }}>
+            <div className="row"><span className="who"><Avatar name={gname(t.from)} size={30} />→<Avatar name={gname(t.to)} size={30} /><span>{gname(t.from)} pays {gname(t.to)}</span></span><b>{money(t.amount)}</b></div>
             <div className="row" style={{ justifyContent: 'flex-start', flexWrap: 'wrap' }}>
-              <button onClick={() => markPaid(t)}>Mark as paid</button>
-              {canRazorpay && t.from === meId && <button className="primary" onClick={() => razorpay(t)}>Pay with Razorpay (test)</button>}
+              <button onClick={() => markPaid(t)}>Mark as paid ✅</button>
+              {canRazorpay && t.from === meId && <button className="primary" onClick={() => razorpay(t)}>Pay with Razorpay (test) 💳</button>}
             </div>
           </div>
         ))}
@@ -144,13 +150,13 @@ export default function GroupPage() {
 
       {tab === 'loans' && <>
         <p className="mute">Unpaid shares tracked as loans. A share is overdue {group.graceDays} days after the expense, or after its reminder date.</p>
-        {calc.loans.length === 0 && <p className="mute">No outstanding loans.</p>}
+        {calc.loans.length === 0 && <div className="empty"><big>🕊️</big>No outstanding loans.</div>}
         {calc.loans.map((l, i) => (
-          <div key={i} className="card stack">
-            <div className="row"><span>{gname(l.from)} owes {gname(l.to)}</span><b>{money(l.amount)}</b></div>
+          <div key={i} className="card stack item" style={{ ['--i' as string]: i }}>
+            <div className="row"><span className="who"><Avatar name={gname(l.from)} size={30} /><span>{gname(l.from)} owes {gname(l.to)}</span></span><b>{money(l.amount)}</b></div>
             <div className="mute">Outstanding {l.daysOutstanding} day{l.daysOutstanding === 1 ? '' : 's'} since {l.since}{l.dueDate ? ` · remind by ${l.dueDate}` : ''} {l.overdue && <span className="badge warn">Overdue</span>}</div>
             <div className="row" style={{ justifyContent: 'flex-start', flexWrap: 'wrap' }}>
-              <a className="btn" href={whatsappLink(remindText(l))} target="_blank" rel="noreferrer">Send reminder</a>
+              <a className="btn" href={whatsappLink(remindText(l))} target="_blank" rel="noreferrer">Nudge on WhatsApp 👋</a>
               <button onClick={() => markPaid(l)}>Mark as paid</button>
             </div>
           </div>
@@ -159,7 +165,7 @@ export default function GroupPage() {
 
       {tab === 'members' && <>
         {Object.entries(group.members).map(([id, m]) => (
-          <div key={id} className="card row"><span>{m.name}{id === meId && ' (you)'}</span><span className="mute">{m.uid ? 'joined' : 'not joined'}</span></div>
+          <div key={id} className="card row"><span className="who"><Avatar name={m.name} />{m.name}{id === meId && ' (you)'}</span><span className="mute">{m.uid ? 'joined' : 'not joined'}</span></div>
         ))}
         <button onClick={() => { const n = prompt('Name of the person to add'); if (n?.trim()) store.addMember(group.id, n.trim()) }}>+ Add person</button>
         {store.mode === 'cloud' && <div className="card stack" style={{ marginTop: 12 }}>

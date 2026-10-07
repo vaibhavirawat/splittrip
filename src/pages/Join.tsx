@@ -29,7 +29,7 @@ export default function Join() {
   const open = Object.entries(g.members).filter(([, m]) => !m.uid)
   return (
     <div className="wrap stack">
-      <h1>Join “{g.name}”</h1>
+      <h1>Join <span className="tilt">{g.name}</span> 🎉</h1>
       {open.length > 0 && <>
         <p className="mute">Are you one of these people? Pick yourself to take over their existing expenses.</p>
         {open.map(([id, m]) => <button key={id} onClick={() => join(id)}>I’m {m.name}</button>)}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth'
 import { CURRENCIES } from '../lib/rates'
+import Avatar from '../components/Avatar'
 import { store, type Group } from '../store'
 
 export default function Groups() {
@@ -26,21 +27,27 @@ export default function Groups() {
   return (
     <div className="wrap">
       <header className="top">
-        <h1>Your groups</h1>
+        <h1>Your <span className="tilt">groups</span></h1>
         <div className="row">
-          <span className="mute">{user!.name}</span>
+          <span className="who"><Avatar name={user!.name} size={32} /></span>
           <button onClick={() => store.signOut()}>Sign out</button>
         </div>
       </header>
       {groups === null && <p className="mute">Loading…</p>}
-      {groups?.length === 0 && <p className="mute">No groups yet. Create one for your next trip or dinner.</p>}
-      {groups?.map((g) => (
-        <Link key={g.id} to={`/g/${g.id}`} className="card row" style={{ color: 'inherit' }}>
-          <div><b>{g.name}</b><div className="mute">{Object.keys(g.members).length} members · {g.baseCurrency}</div></div>
-          <span>›</span>
+      {groups?.length === 0 && <div className="empty"><big>🧳</big>No groups yet.<br />Make one for your next trip or dinner.</div>}
+      {groups?.map((g, i) => (
+        <Link key={g.id} to={`/g/${g.id}`} className="card row item" style={{ color: 'inherit', ['--i' as string]: i }}>
+          <div className="who">
+            <span className="emo">✈️</span>
+            <div><b style={{ fontFamily: 'var(--display)', fontSize: '1.1rem' }}>{g.name}</b>
+              <div className="mute">{Object.keys(g.members).length} people · {g.baseCurrency}</div></div>
+          </div>
+          <div className="chips" style={{ flexWrap: 'nowrap' }}>
+            {Object.values(g.members).slice(0, 3).map((m, k) => <span key={k} style={{ marginLeft: k ? -12 : 0 }}><Avatar name={m.name} size={30} /></span>)}
+          </div>
         </Link>
       ))}
-      <button className="primary fab" onClick={() => setOpen(true)}>+ New group</button>
+      <button className="primary fab" onClick={() => setOpen(true)}>+ New group ✨</button>
       {open && (
         <div className="modal" onClick={() => setOpen(false)}>
           <div className="sheet stack" onClick={(e) => e.stopPropagation()}>
