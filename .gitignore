@@ -5,3 +5,5 @@ dist
 .firebase
 *.log
 dev-dist
+.claude
+CLAUDE.md
