@@ -36,6 +36,8 @@ export default function GroupPage() {
   const meId = data ? Object.entries(data.group.members).find(([, m]) => m.uid === user!.uid)?.[0] : undefined
   const overdueMine = calc?.loans.filter((l) => l.overdue && l.from === meId).length ?? 0
   const gname = (id: string) => data?.group.members[id]?.name ?? 'Someone'
+  const who = (id: string) => (id === meId ? 'You' : gname(id))
+  const v = (id: string, you: string, other: string) => (id === meId ? you : other)
 
   // One-time nudge when the user opens a group in which they have overdue payments.
   useEffect(() => {
@@ -125,7 +127,7 @@ export default function GroupPage() {
         <h2>Net balances</h2>
         {Object.keys(group.members).map((id, i) => (
           <div key={id} className="card row item" style={{ ['--i' as string]: i }}>
-            <span className="who"><Avatar name={gname(id)} />{gname(id)}{id === meId && ' (you)'}</span>
+            <span className="who"><Avatar name={gname(id)} />{gname(id)}{id === meId && gname(id) !== 'You' && ' (you)'}</span>
             <span className={calc.bal[id] > 0 ? 'pos' : calc.bal[id] < 0 ? 'neg' : 'mute'}>
               {calc.bal[id] === 0 ? 'settled' : `${calc.bal[id] > 0 ? 'is owed ' : 'owes '}${money(Math.abs(calc.bal[id]))}`}
             </span>
@@ -135,7 +137,7 @@ export default function GroupPage() {
         {calc.transfers.length === 0 && <div className="empty"><big>🎉</big>Everyone is settled. Clean slate!</div>}
         {calc.transfers.map((t, i) => (
           <div key={i} className="card stack item" style={{ ['--i' as string]: i }}>
-            <div className="row"><span className="who"><Avatar name={gname(t.from)} size={30} />→<Avatar name={gname(t.to)} size={30} /><span>{gname(t.from)} pays {gname(t.to)}</span></span><b>{money(t.amount)}</b></div>
+            <div className="row"><span className="who"><Avatar name={gname(t.from)} size={30} />→<Avatar name={gname(t.to)} size={30} /><span>{who(t.from)} {v(t.from, 'pay', 'pays')} {who(t.to)}</span></span><b>{money(t.amount)}</b></div>
             <div className="row" style={{ justifyContent: 'flex-start', flexWrap: 'wrap' }}>
               <button onClick={() => markPaid(t)}>Mark as paid ✅</button>
               {canRazorpay && t.from === meId && <button className="primary" onClick={() => razorpay(t)}>Pay with Razorpay (test) 💳</button>}
@@ -158,7 +160,7 @@ export default function GroupPage() {
         {calc.loans.length === 0 && <div className="empty"><big>🕊️</big>No outstanding loans.</div>}
         {calc.loans.map((l, i) => (
           <div key={i} className="card stack item" style={{ ['--i' as string]: i }}>
-            <div className="row"><span className="who"><Avatar name={gname(l.from)} size={30} /><span>{gname(l.from)} owes {gname(l.to)}</span></span><b>{money(l.amount)}</b></div>
+            <div className="row"><span className="who"><Avatar name={gname(l.from)} size={30} /><span>{who(l.from)} {v(l.from, 'owe', 'owes')} {who(l.to)}</span></span><b>{money(l.amount)}</b></div>
             <div className="mute">Outstanding {l.daysOutstanding} day{l.daysOutstanding === 1 ? '' : 's'} since {l.since}{l.dueDate ? ` · remind by ${l.dueDate}` : ''} {l.overdue && <span className="badge warn">Overdue</span>}</div>
             <div className="row" style={{ justifyContent: 'flex-start', flexWrap: 'wrap' }}>
               <a className="btn" href={whatsappLink(remindText(l))} target="_blank" rel="noreferrer">Nudge on WhatsApp 👋</a>
@@ -172,7 +174,7 @@ export default function GroupPage() {
 
       {tab === 'members' && <>
         {Object.entries(group.members).map(([id, m]) => (
-          <div key={id} className="card row"><span className="who"><Avatar name={m.name} />{m.name}{id === meId && ' (you)'}</span><span className="mute">{m.uid ? 'joined' : 'not joined'}</span></div>
+          <div key={id} className="card row"><span className="who"><Avatar name={m.name} />{m.name}{id === meId && gname(id) !== 'You' && ' (you)'}</span><span className="mute">{m.uid ? 'joined' : 'not joined'}</span></div>
         ))}
         <button onClick={() => { const n = prompt('Name of the person to add'); if (n?.trim()) store.addMember(group.id, n.trim()) }}>+ Add person</button>
         {store.mode === 'cloud' && <div className="card stack" style={{ marginTop: 12 }}>
