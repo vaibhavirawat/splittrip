@@ -3,7 +3,7 @@ import type { Expense, Payment } from './split'
 export interface Sample {
   name: string
   baseCurrency: string
-  others: Record<string, string> // placeholder member id -> name
+  others: Record<string, { name: string; upi?: string }> // placeholder member id -> details
   expenses: Omit<Expense, 'id' | 'createdAt'>[]
   payments: Omit<Payment, 'id' | 'createdAt'>[]
 }
@@ -23,7 +23,7 @@ export function sampleTrip(me: string): Sample {
   return {
     name: 'Goa Trip (sample)',
     baseCurrency: 'INR',
-    others: { [A]: 'Aarav', [M]: 'Meera', [K]: 'Kabir' },
+    others: { [A]: { name: 'Aarav', upi: 'aarav@okaxis' }, [M]: { name: 'Meera', upi: 'meera@ybl' }, [K]: { name: 'Kabir', upi: 'kabir@paytm' } },
     expenses: [
       e({ description: 'Beach villa, 2 nights', amount: 2400000, paidBy: A, split: all, date: day(12), location: 'Calangute, India', dueDate: day(8) }),
       e({ description: 'Seafood dinner', amount: 520000, paidBy: me, split: all, date: day(11), location: 'Baga, India' }),

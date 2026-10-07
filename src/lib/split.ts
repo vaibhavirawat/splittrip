@@ -24,7 +24,7 @@ export interface Payment {
   to: string
   amount: number // minor units in base currency
   date: string
-  method: 'manual' | 'razorpay'
+  method: 'manual' | 'razorpay' | 'upi'
   ref?: string
   createdAt: number
 }

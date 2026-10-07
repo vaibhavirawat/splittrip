@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { insights } from './insights'
+import { isValidVpa, upiLink } from './upi'
 import { allocate, balances, loans, settle, sharesInBase, type Expense, type Payment } from './split'
 
 const exp = (o: Partial<Expense>): Expense => ({
@@ -83,4 +84,25 @@ describe('insights', () => {
   })
   it('averages per person per day over the trip span', () => expect(r.perPersonPerDay).toBe(Math.round(330000 / 3 / 3)))
   it('reports foreign-currency totals', () => expect(r.foreign).toEqual([{ currency: 'USD', amount: 6000 }]))
+})
+
+
+describe('upi', () => {
+  it('validates UPI IDs', () => {
+    expect(isValidVpa('aarav@okaxis')).toBe(true)
+    expect(isValidVpa('9876543210@ybl')).toBe(true)
+    expect(isValidVpa('first.last-1@paytm')).toBe(true)
+    for (const bad of ['', 'aarav', '@ybl', 'a@b', 'a b@ybl', 'aarav@ok axis']) expect(isValidVpa(bad)).toBe(false)
+  })
+  it('builds a upi://pay link with a two-decimal amount, INR and an encoded note', () => {
+    const l = upiLink({ vpa: 'aarav@okaxis', name: 'Aarav Singh', amountMinor: 765250, note: 'Goa Trip: pay Aarav' })
+    const u = new URL(l.replace('upi://', 'https://'))
+    expect(l.startsWith('upi://pay?')).toBe(true)
+    expect(u.searchParams.get('pa')).toBe('aarav@okaxis')
+    expect(u.searchParams.get('pn')).toBe('Aarav Singh')
+    expect(u.searchParams.get('am')).toBe('7652.50')
+    expect(u.searchParams.get('cu')).toBe('INR')
+    expect(u.searchParams.get('tn')).toBe('Goa Trip: pay Aarav')
+    expect(l).not.toContain('+')
+  })
 })

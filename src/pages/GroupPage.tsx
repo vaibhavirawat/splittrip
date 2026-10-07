@@ -5,6 +5,8 @@ import Avatar from '../components/Avatar'
 import CountUp from '../components/CountUp'
 import ExpenseForm from '../components/ExpenseForm'
 import Insights from '../components/Insights'
+import UpiPay from '../components/UpiPay'
+import { isValidVpa } from '../lib/upi'
 import { confetti } from '../lib/confetti'
 import { emojiFor } from '../lib/emoji'
 import { notifyOverdue, whatsappLink } from '../lib/notify'
@@ -22,6 +24,7 @@ export default function GroupPage() {
   const [tab, setTab] = useState<Tab>('expenses')
   const [adding, setAdding] = useState(false)
   const [editing, setEditing] = useState<Expense | null>(null)
+  const [upiFor, setUpiFor] = useState<Transfer | null>(null)
   const [msg, setMsg] = useState('')
 
   useEffect(() => store.watchGroup(gid!, setData), [gid])
@@ -53,11 +56,19 @@ export default function GroupPage() {
   const cur = group.baseCurrency
   const money = (n: number) => formatMoney(n, cur)
 
-  async function markPaid(t: Transfer, method: 'manual' | 'razorpay' = 'manual', ref?: string) {
+  async function markPaid(t: Transfer, method: 'manual' | 'razorpay' | 'upi' = 'manual', ref?: string) {
     await store.addPayment(group.id, {
       from: t.from, to: t.to, amount: t.amount, date: new Date().toLocaleDateString('en-CA'), method, ...(ref && { ref }),
     })
     confetti()
+  }
+
+  function askUpi(id: string) {
+    const cur = group.members[id]?.upi ?? ''
+    const v = prompt(`UPI ID for ${gname(id)} (like name@okaxis). Leave empty to remove.`, cur)
+    if (v === null) return
+    if (v.trim() && !isValidVpa(v)) return setMsg('That does not look like a UPI ID. It should be like name@bank.')
+    store.setMemberUpi(group.id, id, v.trim())
   }
 
   async function razorpay(t: Transfer) {
@@ -139,6 +150,9 @@ export default function GroupPage() {
           <div key={i} className="card stack item" style={{ ['--i' as string]: i }}>
             <div className="row"><span className="who"><Avatar name={gname(t.from)} size={30} />→<Avatar name={gname(t.to)} size={30} /><span>{who(t.from)} {v(t.from, 'pay', 'pays')} {who(t.to)}</span></span><b>{money(t.amount)}</b></div>
             <div className="row" style={{ justifyContent: 'flex-start', flexWrap: 'wrap' }}>
+              {cur === 'INR' && t.from === meId && (group.members[t.to]?.upi
+                ? <button className="primary" onClick={() => setUpiFor(t)}>Pay via UPI 📲</button>
+                : <button onClick={() => askUpi(t.to)}>Add {gname(t.to)}'s UPI ID</button>)}
               <button onClick={() => markPaid(t)}>Mark as paid ✅</button>
               {canRazorpay && t.from === meId && <button className="primary" onClick={() => razorpay(t)}>Pay with Razorpay (test) 💳</button>}
             </div>
@@ -174,7 +188,8 @@ export default function GroupPage() {
 
       {tab === 'members' && <>
         {Object.entries(group.members).map(([id, m]) => (
-          <div key={id} className="card row"><span className="who"><Avatar name={m.name} />{m.name}{id === meId && gname(id) !== 'You' && ' (you)'}</span><span className="mute">{m.uid ? 'joined' : 'not joined'}</span></div>
+          <div key={id} className="card row"><span className="who"><Avatar name={m.name} />{m.name}{id === meId && gname(id) !== 'You' && ' (you)'}</span><span className="mute">{m.uid ? 'joined' : 'not joined'}</span>
+            <button className="link" onClick={() => askUpi(id)}>{m.upi ? `UPI: ${m.upi}` : '+ UPI ID'}</button></div>
         ))}
         <button onClick={() => { const n = prompt('Name of the person to add'); if (n?.trim()) store.addMember(group.id, n.trim()) }}>+ Add person</button>
         {store.mode === 'cloud' && <div className="card stack" style={{ marginTop: 12 }}>
@@ -186,6 +201,11 @@ export default function GroupPage() {
       </>}
 
       {tab === 'expenses' && <button className="primary fab" onClick={() => setAdding(true)}>+ Add expense</button>}
+      {upiFor && group.members[upiFor.to]?.upi && (
+        <UpiPay payee={{ name: gname(upiFor.to), upi: group.members[upiFor.to].upi! }} payerName={gname(upiFor.from)}
+          amountMinor={upiFor.amount} note={`${group.name}: ${gname(upiFor.from)} to ${gname(upiFor.to)}`}
+          onPaid={() => markPaid(upiFor, 'upi')} onClose={() => setUpiFor(null)} />
+      )}
       {editing && <ExpenseForm key={editing.id} group={group} meId={meId ?? ''} initial={editing}
         onSave={(x) => {
           const { location: _l, dueDate: _d, ...rest } = editing // so a cleared optional field is really removed

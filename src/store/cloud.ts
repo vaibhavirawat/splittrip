@@ -2,7 +2,7 @@ import {
   GoogleAuthProvider, onAuthStateChanged, signInAnonymously, signInWithPopup, signOut as fbSignOut,
 } from 'firebase/auth'
 import {
-  addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, setDoc, updateDoc, where,
+  addDoc, arrayUnion, collection, deleteDoc, deleteField, doc, getDoc, onSnapshot, orderBy, query, setDoc, updateDoc, where,
 } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import type { Expense, Payment } from '../lib/split'
@@ -88,6 +88,9 @@ export const cloudStore: Store = {
       ...sample.payments.map((p) => addDoc(collection(ref, 'payments'), clean({ ...p, createdAt: now }))),
     ])
     return ref.id
+  },
+  setMemberUpi: async (gid, memberId, upi) => {
+    await updateDoc(doc(D(), 'groups', gid), { [`members.${memberId}.upi`]: upi ? upi : deleteField() })
   },
   addMember: async (gid, name) => {
     await updateDoc(doc(D(), 'groups', gid), { [`members.g_${rid()}`]: { name } })

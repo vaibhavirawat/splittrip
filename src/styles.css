@@ -106,3 +106,6 @@ label{display:grid;gap:5px;font-size:.85rem;font-weight:700;color:var(--mute)}
 .wrap{overflow-x:hidden}
 .sample-cta{width:100%;justify-content:flex-start;text-align:left;gap:12px;padding:12px 14px;background:var(--teal-soft);margin-top:4px;animation:rise .5s .15s both}
 .sample-cta .emo{background:var(--card)}
+.upi-amt{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1}
+.qr{display:grid;place-items:center;min-height:240px}
+.qr img{background:#fff;padding:10px;border:2px solid var(--line);border-radius:18px;box-shadow:var(--shadow);animation:pop .4s}

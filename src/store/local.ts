@@ -24,7 +24,7 @@ function seed(): DB {
     groups: [{
       id: gid, name: 'Goa Trip', baseCurrency: 'INR', graceDays: 7, createdBy: 'local', createdAt: Date.now(),
       memberUids: ['local'],
-      members: { local: { name: 'You', uid: 'local' }, aarav: { name: 'Aarav' }, meera: { name: 'Meera' }, kabir: { name: 'Kabir' } },
+      members: { local: { name: 'You', uid: 'local' }, aarav: { name: 'Aarav', upi: 'aarav@okaxis' }, meera: { name: 'Meera', upi: 'meera@ybl' }, kabir: { name: 'Kabir', upi: 'kabir@paytm' } },
     }],
     expenses: {
       [gid]: [
@@ -88,6 +88,11 @@ export const localStore: Store = {
     db.payments[id] = sample.payments.map((p) => ({ ...p, id: rid(), createdAt: Date.now() }))
     save()
     return id
+  },
+  setMemberUpi: async (gid, memberId, upi) => {
+    const m = find(gid)?.members[memberId]
+    if (m) { if (upi) m.upi = upi; else delete m.upi }
+    save()
   },
   addMember: async (gid, name) => {
     const g = find(gid)

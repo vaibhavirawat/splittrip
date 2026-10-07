@@ -11,6 +11,7 @@ export interface User {
 export interface Member {
   name: string
   uid?: string // set once a real account has claimed this member
+  upi?: string // UPI ID (VPA) other members can pay
 }
 
 export interface Group {
@@ -46,6 +47,7 @@ export interface Store {
   createGroup(user: User, name: string, baseCurrency: string, others: string[]): Promise<string>
   joinGroup(user: User, gid: string, claimMemberId?: string): Promise<void>
   addMember(gid: string, name: string): Promise<void>
+  setMemberUpi(gid: string, memberId: string, upi: string): Promise<void> // empty string clears it
   addExpense(gid: string, e: NewExpense): Promise<void>
   updateExpense(gid: string, e: Expense): Promise<void>
   deleteExpense(gid: string, id: string): Promise<void>
@@ -59,6 +61,6 @@ export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().to
 export function buildSample(user: User) {
   const s = sampleTrip(user.uid)
   const members: Group['members'] = { [user.uid]: { name: user.name, uid: user.uid } }
-  for (const [id, name] of Object.entries(s.others)) members[id] = { name }
+  for (const [id, o] of Object.entries(s.others)) members[id] = { name: o.name, ...(o.upi && { upi: o.upi }) }
   return { sample: s, members }
 }
