@@ -4,6 +4,7 @@ import { useAuth } from '../auth'
 import Avatar from '../components/Avatar'
 import CountUp from '../components/CountUp'
 import ExpenseForm from '../components/ExpenseForm'
+import Insights from '../components/Insights'
 import { confetti } from '../lib/confetti'
 import { emojiFor } from '../lib/emoji'
 import { notifyOverdue, whatsappLink } from '../lib/notify'
@@ -11,8 +12,8 @@ import { payWithRazorpay, razorpayEnabled } from '../lib/razorpay'
 import { balances, formatMoney, type Expense, loans, settle, sharesInBase, toBase, type Loan, type Transfer } from '../lib/split'
 import { store, type GroupData } from '../store'
 
-type Tab = 'expenses' | 'balances' | 'loans' | 'members'
-const TAB_EMOJI: Record<Tab, string> = { expenses: '🧾', balances: '⚖️', loans: '⏰', members: '👯' }
+type Tab = 'expenses' | 'balances' | 'loans' | 'insights' | 'members'
+const TAB_EMOJI: Record<Tab, string> = { expenses: '🧾', balances: '⚖️', loans: '⏰', insights: '📊', members: '👯' }
 
 export default function GroupPage() {
   const { gid } = useParams()
@@ -85,9 +86,9 @@ export default function GroupPage() {
       </header>
 
       <div className="tabs">
-        {(['expenses', 'balances', 'loans', 'members'] as Tab[]).map((t) => (
-          <button key={t} className={tab === t ? 'on' : ''} onClick={() => setTab(t)}>
-            {TAB_EMOJI[t]} {t[0].toUpperCase() + t.slice(1)}{t === 'loans' && overdueMine > 0 ? ` (${overdueMine}!)` : ''}
+        {(['expenses', 'balances', 'loans', 'insights', 'members'] as Tab[]).map((t) => (
+          <button key={t} className={tab === t ? 'on' : ''}  aria-label={t} onClick={() => setTab(t)}>
+            {TAB_EMOJI[t]}<span className="lbl"> {t[0].toUpperCase() + t.slice(1)}{t === 'loans' && overdueMine > 0 ? ` (${overdueMine}!)` : ''}</span>
           </button>
         ))}
       </div>
@@ -166,6 +167,8 @@ export default function GroupPage() {
           </div>
         ))}
       </>}
+
+      {tab === 'insights' && <Insights data={data} />}
 
       {tab === 'members' && <>
         {Object.entries(group.members).map(([id, m]) => (

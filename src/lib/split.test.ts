@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { insights } from './insights'
 import { allocate, balances, loans, settle, sharesInBase, type Expense, type Payment } from './split'
 
 const exp = (o: Partial<Expense>): Expense => ({
@@ -64,4 +65,22 @@ describe('loans', () => {
     const bal = balances(['a', 'b', 'c'], [e], [])
     expect(loans(bal, [e], 7, new Date('2026-01-20').getTime()).some((x) => x.overdue)).toBe(false)
   })
+})
+
+
+describe('insights', () => {
+  const e1 = exp({ id: '1', description: 'Seafood dinner', amount: 30000, date: '2026-01-01' })
+  const e2 = exp({ id: '2', description: 'Airport taxi', amount: 6000, currency: 'USD', rate: 50, paidBy: 'b', date: '2026-01-03' })
+  const r = insights([e1, e2], ['a', 'b', 'c'], 'INR')
+  it('totals in base currency', () => expect(r.total).toBe(30000 + 300000))
+  it('who paid and who consumed both sum to the total', () => {
+    expect(Object.values(r.paid).reduce((s, v) => s + v, 0)).toBe(r.total)
+    expect(Object.values(r.consumed).reduce((s, v) => s + v, 0)).toBe(r.total)
+  })
+  it('groups by category, biggest first, and finds the biggest expense', () => {
+    expect(r.byCategory.map((c) => c.label)).toEqual(['Travel', 'Food'])
+    expect(r.biggest?.description).toBe('Airport taxi')
+  })
+  it('averages per person per day over the trip span', () => expect(r.perPersonPerDay).toBe(Math.round(330000 / 3 / 3)))
+  it('reports foreign-currency totals', () => expect(r.foreign).toEqual([{ currency: 'USD', amount: 6000 }]))
 })
